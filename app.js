@@ -1,5 +1,6 @@
 // @packages
 const express = require("express");
+const niceInvoice = require("nice-invoice");
 const app = express();
 
 // database
@@ -52,33 +53,32 @@ async function run() {
     // update
     app.patch("/users", async (req, res) => {
       const data = req.body;
-      const email  = data.email;
-      console.log(email)
-
+      const email = data.email;
+      console.log(email);
 
       const filter = { email: email };
-            const options = { upsert: false };
+      const options = { upsert: false };
 
       const updateDoc = {
         $set: {
           img: data.img,
           displayName: data.displayName,
-          phone: data.phone
-      },
+          phone: data.phone,
+        },
       };
 
-      const result = await usersCl.updateOne(filter,updateDoc,options);
+      const result = await usersCl.updateOne(filter, updateDoc, options);
 
       res.json(result);
     });
     // get info
-    app.get('/users/:email', async (req,res)=> {
-      const {email} = req?.params;
+    app.get("/users/:email", async (req, res) => {
+      const { email } = req?.params;
 
-      const cursor = usersCl.findOne({email: email});
+      const cursor = usersCl.findOne({ email: email });
       const data = await cursor;
-      res.json(data)
-    })
+      res.json(data);
+    });
 
     // @payment methods
     app.get("/payment-methods", async (req, res) => {
@@ -171,6 +171,52 @@ async function run() {
       }
 
       res.json({});
+    });
+
+    // generate invoice
+    app.post("/invoice", async (req, res) => {
+      const data = req.body;
+      console.log(data);
+
+      // get current year
+      const d = new Date();
+      let year = d.getFullYear();
+
+      const invoiceDetail = {
+        shipping: {
+          name: data.name,
+          address: data.address,
+          city: data.city,
+          state: data.state,
+          country: data.country,
+          postal_code: 94111,
+        },
+        items: data.items,
+        subtotal: data.subtotal,
+        total: data.total,
+        order_number: data.order_number,
+        header: {
+          company_name: data.company_name,
+          company_logo: "logo.png",
+          company_address: data.company_address,
+        },
+        footer: {
+          text: `©${year} Shoppers'Tale. All rights reserved.`,
+        },
+        currency_symbol: "Tk",
+        date: {
+          billing_date: data.billing_date,
+          due_date: data.due_date,
+        },
+      };
+
+      niceInvoice(invoiceDetail, "Invoice.pdf");
+      res.json({ created: true });
+    });
+
+    // download invoice
+    app.get("/invoice/download", (req, res) => {
+      res.download("./Invoice.pdf");
     });
   } finally {
     // Ensures that the client will close when you finish/error
