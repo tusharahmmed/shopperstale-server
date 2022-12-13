@@ -54,7 +54,6 @@ async function run() {
     app.patch("/users", async (req, res) => {
       const data = req.body;
       const email = data.email;
-      console.log(email);
 
       const filter = { email: email };
       const options = { upsert: false };
@@ -176,7 +175,6 @@ async function run() {
     // generate invoice
     app.post("/invoice", async (req, res) => {
       const data = req.body;
-      console.log(data);
 
       // get current year
       const d = new Date();
